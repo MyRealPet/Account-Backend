@@ -1,7 +1,6 @@
 package com.myrealpet.account.controller;
 
 import com.myrealpet.account.entity.Account;
-import com.myrealpet.account.entity.AccountProfile;
 import com.myrealpet.account.redis_cache.RedisCacheService;
 import com.myrealpet.account.service.AccountService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AccountController {
 
-    private final RedisCacheService redisCacheService;
     private final AccountService accountService;
 
 
@@ -103,46 +101,4 @@ public class AccountController {
         return ResponseEntity.ok(exists);
     }
 
-    @PostMapping("/{accountId}/profile")
-    public ResponseEntity<AccountProfile> createProfile(@PathVariable Long accountId,
-                                                       @RequestParam String nickname) {
-        AccountProfile profile = accountService.createProfile(accountId, nickname);
-        return ResponseEntity.status(HttpStatus.CREATED).body(profile);
-    }
-
-    @GetMapping("/{accountId}/profile")
-    public ResponseEntity<AccountProfile> getProfile(@PathVariable Long accountId) {
-        Optional<AccountProfile> profile = accountService.findProfileByAccountId(accountId);
-        return profile.map(ResponseEntity::ok)
-                     .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/profile/nickname/{nickname}")
-    public ResponseEntity<AccountProfile> getProfileByNickname(@PathVariable String nickname) {
-        Optional<AccountProfile> profile = accountService.findProfileByNickname(nickname);
-        return profile.map(ResponseEntity::ok)
-                     .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/{accountId}/profile")
-    public ResponseEntity<AccountProfile> updateProfile(@PathVariable Long accountId,
-                                                       @RequestParam(required = false) String nickname,
-                                                       @RequestParam(required = false) String profileImageUrl,
-                                                       @RequestParam(required = false) String phone,
-                                                       @RequestParam(required = false) String bio) {
-        AccountProfile profile = accountService.updateProfile(accountId, nickname, profileImageUrl, phone, bio);
-        return ResponseEntity.ok(profile);
-    }
-
-    @GetMapping("/profile/search")
-    public ResponseEntity<List<AccountProfile>> searchProfiles(@RequestParam String keyword) {
-        List<AccountProfile> profiles = accountService.searchProfilesByNickname(keyword);
-        return ResponseEntity.ok(profiles);
-    }
-
-    @GetMapping("/check-nickname/{nickname}")
-    public ResponseEntity<Boolean> checkNicknameExists(@PathVariable String nickname) {
-        boolean exists = accountService.isNicknameExists(nickname);
-        return ResponseEntity.ok(exists);
-    }
 }
