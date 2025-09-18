@@ -1,5 +1,7 @@
 package com.myrealpet.account.service;
 
+import com.myrealpet.account.dto.LoginResponse;
+import com.myrealpet.account.dto.RegisterRequest;
 import com.myrealpet.account.entity.Account;
 import com.myrealpet.account.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +18,8 @@ import java.util.Optional;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
-    private final PasswordEncoder passwordEncoder ;
+    private final PasswordEncoder passwordEncoder;
+    private final TokenService tokenService;
 
     @Override
     @Transactional
@@ -69,10 +72,6 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.findByUsername(username);
     }
 
-    @Override
-    public Optional<Account> findAccountWithProfile(String username) {
-        return accountRepository.findByUsernameWithProfile(username);
-    }
 
     @Override
     public Optional<Account> findAccountByProvider(Account.AuthProvider provider, String providerId) {
@@ -131,6 +130,51 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public boolean isUsernameExists(String username) {
         return accountRepository.existsByUsername(username);
+    }
+
+    @Override
+    public LoginResponse login(String username, String password) {
+        Account account = accountRepository.findByUsernameAndIsActiveTrue(username)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or account is deactivated"));
+
+        if (!passwordEncoder.matches(password, account.getPassword())) {
+            throw new IllegalArgumentException("Invalid password");
+        }
+
+        String token = tokenService.generateToken(account.getId());
+        return LoginResponse.of(token, account.getId(), account.getUsername(), tokenService.getTokenExpiration());
+    }
+
+    @Override
+    @Transactional
+    public LoginResponse register(RegisterRequest registerRequest) {
+        if (accountRepository.existsByUsername(registerRequest.getId())) {
+            throw new IllegalArgumentException("Username already exists: " + registerRequest.getId());
+        }
+
+        Account account = Account.builder()
+                .username(registerRequest.getId())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .name(registerRequest.getName())
+                .phoneNumber(registerRequest.getPhoneNumber())
+                .provider(Account.AuthProvider.LOCAL)
+                .role(Account.Role.USER)
+                .isActive(true)
+                .build();
+
+        Account savedAccount = accountRepository.save(account);
+        String token = tokenService.generateToken(savedAccount.getId());
+        return LoginResponse.of(token, savedAccount.getId(), savedAccount.getUsername(), tokenService.getTokenExpiration());
+    }
+
+    @Override
+    public void logout(String token) {
+        tokenService.invalidateToken(token);
+    }
+
+    @Override
+    public void logoutAll(Long accountId) {
+        tokenService.invalidateAllUserTokens(accountId);
     }
 
 }

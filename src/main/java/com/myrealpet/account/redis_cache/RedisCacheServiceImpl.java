@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -56,5 +58,45 @@ public class RedisCacheServiceImpl implements RedisCacheService {
     @Override
     public void deleteByKey(String token) {
         redisTemplate.delete(token);
+    }
+
+    @Override
+    public void setValueWithExpiration(String key, String value, Duration duration) {
+        ValueOperations<String, String> valueOps = redisTemplate.opsForValue();
+        valueOps.set(key, value, duration);
+    }
+
+    @Override
+    public String getValue(String key) {
+        ValueOperations<String, String> valueOps = redisTemplate.opsForValue();
+        return valueOps.get(key);
+    }
+
+    @Override
+    public void deleteValue(String key) {
+        redisTemplate.delete(key);
+    }
+
+    @Override
+    public void setExpiration(String key, Duration duration) {
+        redisTemplate.expire(key, duration);
+    }
+
+    @Override
+    public void addToSet(String key, String value) {
+        SetOperations<String, String> setOps = redisTemplate.opsForSet();
+        setOps.add(key, value);
+    }
+
+    @Override
+    public void removeFromSet(String key, String value) {
+        SetOperations<String, String> setOps = redisTemplate.opsForSet();
+        setOps.remove(key, value);
+    }
+
+    @Override
+    public Set<String> getSetMembers(String key) {
+        SetOperations<String, String> setOps = redisTemplate.opsForSet();
+        return setOps.members(key);
     }
 }

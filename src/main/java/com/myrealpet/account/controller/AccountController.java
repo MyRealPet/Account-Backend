@@ -1,7 +1,9 @@
 package com.myrealpet.account.controller;
 
+import com.myrealpet.account.dto.LoginRequest;
+import com.myrealpet.account.dto.LoginResponse;
+import com.myrealpet.account.dto.RegisterRequest;
 import com.myrealpet.account.entity.Account;
-import com.myrealpet.account.redis_cache.RedisCacheService;
 import com.myrealpet.account.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,18 +17,48 @@ import java.util.Optional;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/accounts")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AccountController {
 
     private final AccountService accountService;
 
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+        try {
+            LoginResponse response = accountService.login(loginRequest.getId(), loginRequest.getPassword());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String token) {
+        try {
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            accountService.logout(token);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/logout-all")
+    public ResponseEntity<Void> logoutAll(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/register")
-    public ResponseEntity<Account> createAccount(@RequestParam String username,
-                                               @RequestParam String password) {
-        Account account = accountService.createAccount(username, password);
-        return ResponseEntity.status(HttpStatus.CREATED).body(account);
+    public ResponseEntity<LoginResponse> register(@RequestBody RegisterRequest registerRequest) {
+        try {
+            LoginResponse response = accountService.register(registerRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     @PostMapping("/social-register")
@@ -51,12 +83,6 @@ public class AccountController {
                      .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/username/{username}/with-profile")
-    public ResponseEntity<Account> getAccountWithProfile(@PathVariable String username) {
-        Optional<Account> account = accountService.findAccountWithProfile(username);
-        return account.map(ResponseEntity::ok)
-                     .orElse(ResponseEntity.notFound().build());
-    }
 
     @GetMapping
     public ResponseEntity<List<Account>> getAllAccounts() {

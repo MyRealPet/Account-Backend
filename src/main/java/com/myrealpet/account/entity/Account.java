@@ -1,5 +1,6 @@
 package com.myrealpet.account.entity;
 
+// import com.myrealpet.account_profile.entity.AccountProfile;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,8 +27,14 @@ public class Account {
     
     @Column(unique = true, nullable = false, length = 20)
     private String username;
-    
+
     private String password;
+
+    @Column(length = 20)
+    private String name;
+
+    @Column(length = 20)
+    private String phoneNumber;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -36,6 +43,7 @@ public class Account {
     private String providerId;
     
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private Role role = Role.USER;
     
     @Column(nullable = false)
@@ -49,8 +57,8 @@ public class Account {
     @LastModifiedDate
     private LocalDateTime updatedAt;
     
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private AccountProfile profile;
+    // @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private AccountProfile profile;
     
     public enum AuthProvider {
         LOCAL, KAKAO, GOOGLE, NAVER
