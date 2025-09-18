@@ -1,7 +1,6 @@
 package com.myrealpet.account.service;
 
 import com.myrealpet.account.entity.Account;
-import com.myrealpet.account.entity.AccountProfile;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,16 +33,4 @@ public interface AccountService {
 
     boolean isUsernameExists(String username);
 
-    AccountProfile createProfile(Long accountId, String nickname);
-
-    Optional<AccountProfile> findProfileByAccountId(Long accountId);
-
-    Optional<AccountProfile> findProfileByNickname(String nickname);
-
-    AccountProfile updateProfile(Long accountId, String nickname, String profileImageUrl,
-                                String phone, String bio);
-
-    List<AccountProfile> searchProfilesByNickname(String keyword);
-
-    boolean isNicknameExists(String nickname);
 }

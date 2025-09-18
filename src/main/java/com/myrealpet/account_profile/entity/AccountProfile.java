@@ -1,4 +1,6 @@
-package com.myrealpet.account.entity;
+package com.myrealpet.account_profile.entity;
+
+import com.myrealpet.account.entity.Account;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

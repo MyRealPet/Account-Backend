@@ -1,6 +1,6 @@
-package com.myrealpet.account.repository;
+package com.myrealpet.account_profile.repository;
 
-import com.myrealpet.account.entity.AccountProfile;
+import com.myrealpet.account_profile.entity.AccountProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
