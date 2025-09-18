@@ -1,5 +1,7 @@
 package com.myrealpet.account.service;
 
+import com.myrealpet.account.dto.LoginResponse;
+import com.myrealpet.account.dto.RegisterRequest;
 import com.myrealpet.account.entity.Account;
 
 import java.util.List;
@@ -15,7 +17,6 @@ public interface AccountService {
 
     Optional<Account> findAccountByUsername(String username);
 
-    Optional<Account> findAccountWithProfile(String username);
 
     Optional<Account> findAccountByProvider(Account.AuthProvider provider, String providerId);
 
@@ -32,5 +33,13 @@ public interface AccountService {
     void deleteAccount(Long accountId);
 
     boolean isUsernameExists(String username);
+
+    LoginResponse login(String username, String password);
+
+    LoginResponse register(RegisterRequest registerRequest);
+
+    void logout(String token);
+
+    void logoutAll(Long accountId);
 
 }

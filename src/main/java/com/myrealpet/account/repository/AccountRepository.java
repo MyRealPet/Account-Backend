@@ -20,8 +20,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     
     Optional<Account> findByUsernameAndIsActiveTrue(String username);
     
-    @Query("SELECT a FROM Account a LEFT JOIN FETCH a.profile WHERE a.username = :username")
-    Optional<Account> findByUsernameWithProfile(@Param("username") String username);
     
     @Query("SELECT a FROM Account a WHERE a.isActive = false")
     List<Account> findInactiveAccounts();
