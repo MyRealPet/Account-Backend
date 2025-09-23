@@ -42,4 +42,8 @@ public interface AccountService {
 
     void logoutAll(Long accountId);
 
+    LoginResponse loginWithKakaoToken(String kakaoAccessToken);
+
+    Account getCurrentUser(String token);
+
 }
