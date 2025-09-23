@@ -7,23 +7,23 @@ spring:
   
   # Database Configuration
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:testdb}
-    username: ${SPRING_DATASOURCE_USERNAME:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
-    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
   
   # JPA Configuration
   jpa:
-    database: ${SPRING_JPA_DATABASE:h2}
-    show-sql: ${SPRING_JPA_SHOW_SQL:true}
-    generate-ddl: ${SPRING_JPA_GENERATE_DDL:true}
+    database: h2
+    show-sql: true
+    generate-ddl: true
     hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:create-drop}
+      ddl-auto: create-drop
     properties:
       hibernate:
-        format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
-        dialect: ${SPRING_DATASOURCE_DIALECT:org.hibernate.dialect.H2Dialect}
-    open-in-view: ${SPRING_JPA_OPEN_IN_VIEW:false}
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
   
   # H2 Console (Development only)
   h2:
