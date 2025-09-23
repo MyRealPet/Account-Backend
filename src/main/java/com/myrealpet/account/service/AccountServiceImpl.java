@@ -6,6 +6,7 @@ import com.myrealpet.account.entity.Account;
 import com.myrealpet.account.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import com.myrealpet.account.util.PasswordEncoder;
+import com.myrealpet.account.util.PhoneNumberFormatter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final PhoneNumberFormatter phoneNumberFormatter;
 
     @Override
     @Transactional
@@ -152,11 +154,13 @@ public class AccountServiceImpl implements AccountService {
             throw new IllegalArgumentException("Username already exists: " + registerRequest.getId());
         }
 
+        String formattedPhoneNumber = phoneNumberFormatter.formatPhoneNumber(registerRequest.getPhoneNumber());
+
         Account account = Account.builder()
                 .username(registerRequest.getId())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .name(registerRequest.getName())
-                .phoneNumber(registerRequest.getPhoneNumber())
+                .phoneNumber(formattedPhoneNumber)
                 .provider(Account.AuthProvider.LOCAL)
                 .role(Account.Role.USER)
                 .isActive(true)
