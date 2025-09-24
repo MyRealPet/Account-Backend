@@ -9,9 +9,15 @@ import com.myrealpet.account.util.PasswordEncoder;
 import com.myrealpet.account.util.PhoneNumberFormatter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -179,6 +185,85 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public void logoutAll(Long accountId) {
         tokenService.invalidateAllUserTokens(accountId);
+    }
+
+    @Override
+    @Transactional
+    public LoginResponse loginWithKakaoToken(String kakaoAccessToken) {
+        try {
+            // 카카오 API를 호출하여 사용자 정보 가져오기
+            RestTemplate restTemplate = new RestTemplate();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + kakaoAccessToken);
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<Map> response = restTemplate.exchange(
+                "https://kapi.kakao.com/v2/user/me",
+                HttpMethod.GET,
+                entity,
+                Map.class
+            );
+
+            Map<String, Object> kakaoUser = response.getBody();
+            if (kakaoUser == null) {
+                throw new IllegalArgumentException("카카오 사용자 정보를 가져올 수 없습니다.");
+            }
+
+            String providerId = kakaoUser.get("id").toString();
+            Map<String, Object> properties = (Map<String, Object>) kakaoUser.get("properties");
+            String nickname = properties != null ? (String) properties.get("nickname") : "카카오사용자";
+
+            // 기존 계정 확인 또는 새 계정 생성
+            Optional<Account> existingAccount = accountRepository.findByProviderAndProviderId(
+                Account.AuthProvider.KAKAO, providerId);
+
+            Account account;
+            if (existingAccount.isPresent()) {
+                account = existingAccount.get();
+                // 계정이 비활성화된 경우 활성화
+                if (!account.getIsActive()) {
+                    account = activateAccount(account.getId());
+                }
+            } else {
+                // 새 소셜 계정 생성
+                account = Account.builder()
+                    .username(nickname + "_" + providerId) // 고유한 username 생성
+                    .provider(Account.AuthProvider.KAKAO)
+                    .providerId(providerId)
+                    .role(Account.Role.USER)
+                    .isActive(true)
+                    .build();
+                account = accountRepository.save(account);
+            }
+
+            // JWT 토큰 생성
+            String accessJwtToken = tokenService.generateAccessToken(account.getId());
+            String refreshJwtToken = tokenService.generateRefreshToken(account.getId());
+
+            return LoginResponse.builder()
+                .token(accessJwtToken)
+                .refreshToken(refreshJwtToken)
+                .accountId(account.getId())
+                .username(account.getUsername())
+                .expiresInSeconds(3600L) // 1시간
+                .build();
+
+        } catch (Exception e) {
+            throw new IllegalArgumentException("카카오 로그인 처리 실패: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Account getCurrentUser(String token) {
+        try {
+            Long accountId = tokenService.validateToken(token);
+            return findAccountById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("토큰이 유효하지 않습니다.");
+        }
     }
 
 }

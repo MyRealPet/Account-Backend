@@ -3,6 +3,7 @@ package com.myrealpet.account.controller;
 import com.myrealpet.account.dto.LoginRequest;
 import com.myrealpet.account.dto.LoginResponse;
 import com.myrealpet.account.dto.RegisterRequest;
+import com.myrealpet.account.dto.KakaoTokenRequest;
 import com.myrealpet.account.entity.Account;
 import com.myrealpet.account.service.AccountService;
 import lombok.RequiredArgsConstructor;
@@ -125,6 +126,32 @@ public class AccountController {
     public ResponseEntity<Boolean> checkUsernameExists(@PathVariable String username) {
         boolean exists = accountService.isUsernameExists(username);
         return ResponseEntity.ok(exists);
+    }
+
+    @PostMapping("/kakao/token")
+    public ResponseEntity<LoginResponse> exchangeKakaoToken(@RequestBody KakaoTokenRequest request) {
+        try {
+            // 카카오 토큰을 사용하여 사용자 정보를 가져오고 JWT 토큰 생성
+            LoginResponse response = accountService.loginWithKakaoToken(request.getAccessToken());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("카카오 토큰 교환 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Account> getCurrentUser(@RequestHeader("Authorization") String token) {
+        try {
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            Account account = accountService.getCurrentUser(token);
+            return ResponseEntity.ok(account);
+        } catch (Exception e) {
+            log.error("사용자 정보 조회 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
     }
 
 }

@@ -16,8 +16,12 @@ public class TokenServiceImpl implements TokenService {
     private final RedisCacheService redisCacheService;
 
     private static final String TOKEN_PREFIX = "auth_token:";
+    private static final String ACCESS_TOKEN_PREFIX = "access_token:";
+    private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
     private static final String USER_TOKEN_PREFIX = "user_tokens:";
     private static final Duration TOKEN_EXPIRATION = Duration.ofHours(24);
+    private static final Duration ACCESS_TOKEN_EXPIRATION = Duration.ofHours(1);
+    private static final Duration REFRESH_TOKEN_EXPIRATION = Duration.ofDays(7);
 
     @Override
     public String generateToken(Long accountId) {
@@ -35,13 +39,58 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
+    public String generateAccessToken(Long accountId) {
+        String token = UUID.randomUUID().toString().replace("-", "");
+        String tokenKey = ACCESS_TOKEN_PREFIX + token;
+        String userTokenKey = USER_TOKEN_PREFIX + accountId;
+
+        redisCacheService.setValueWithExpiration(tokenKey, accountId.toString(), ACCESS_TOKEN_EXPIRATION);
+
+        redisCacheService.addToSet(userTokenKey, token);
+        redisCacheService.setExpiration(userTokenKey, ACCESS_TOKEN_EXPIRATION);
+
+        log.info("Generated access token for account ID: {}", accountId);
+        return token;
+    }
+
+    @Override
+    public String generateRefreshToken(Long accountId) {
+        String token = UUID.randomUUID().toString().replace("-", "");
+        String tokenKey = REFRESH_TOKEN_PREFIX + token;
+        String userTokenKey = USER_TOKEN_PREFIX + accountId + ":refresh";
+
+        redisCacheService.setValueWithExpiration(tokenKey, accountId.toString(), REFRESH_TOKEN_EXPIRATION);
+
+        redisCacheService.addToSet(userTokenKey, token);
+        redisCacheService.setExpiration(userTokenKey, REFRESH_TOKEN_EXPIRATION);
+
+        log.info("Generated refresh token for account ID: {}", accountId);
+        return token;
+    }
+
+    @Override
     public Long validateToken(String token) {
         if (token == null || token.trim().isEmpty()) {
             return null;
         }
 
+        // Try access token first
+        String accessTokenKey = ACCESS_TOKEN_PREFIX + token;
+        String accountIdStr = redisCacheService.getValue(accessTokenKey);
+
+        if (accountIdStr != null) {
+            try {
+                return Long.parseLong(accountIdStr);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid account ID format in access token: {}", token);
+                invalidateToken(token);
+                return null;
+            }
+        }
+
+        // Try regular token
         String tokenKey = TOKEN_PREFIX + token;
-        String accountIdStr = redisCacheService.getValue(tokenKey);
+        accountIdStr = redisCacheService.getValue(tokenKey);
 
         if (accountIdStr != null) {
             try {
